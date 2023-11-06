@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\ChildCategoryController;
+use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\OwnerController;
 use App\Http\Controllers\Backend\ProductController;
@@ -58,3 +60,11 @@ Route::post('product-variant-item', [ProductVariantItemController::class, 'store
 
 /** Order Routes*/
 Route::resource('order', OrderController::class);
+
+// Banner Routes
+Route::put('banner/change-status', [BannerController::class, 'changeStatus'])->name('banner.change-status');
+Route::resource('banner', BannerController::class);
+
+// Coupon Routes
+Route::put('coupons/change-status', [CouponController::class, 'changeStatus'])->name('coupons.change-status');
+Route::resource('coupons', CouponController::class);

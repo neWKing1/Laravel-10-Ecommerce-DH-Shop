@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\Category;
+use App\Models\Banner;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class CategoriesDataTable extends DataTable
+class BannerDataTable extends DataTable
 {
     /**
      * Build the DataTable class.
@@ -22,21 +22,8 @@ class CategoriesDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('action', function ($query) {
-                $editBtn = "<a href='" . route('owner.category.edit', $query->id) . "' class='btn btn-primary'>
-                <i class='bi bi-pen'></i>
-                </a>";
-                $deleteBtn = "<a href='" . route('owner.category.destroy', $query->id) . "' class='btn btn-danger ms-2 delete-item'>
-                <i class='bi bi-archive'></i>
-                </a>";
-                return $editBtn . $deleteBtn;
-            })
-            ->addColumn('discount_type', function ($query) {
-                if ($query->discount_type == 1) {
-                    return 'Percent';
-                } else {
-                    return 'Amount';
-                }
+            ->addColumn('image', function ($query) {
+                return "<img src='" . asset($query->image) . "' width='100px' alt='...'>";
             })
             ->addColumn('status', function ($query) {
                 if ($query->status == 1) {
@@ -50,14 +37,20 @@ class CategoriesDataTable extends DataTable
                 }
                 return $button;
             })
-            ->rawColumns(['icon', 'action', 'status'])
+            ->addColumn('action', function ($query) {
+                $deleteBtn = "<a href='" . route('owner.banner.destroy', $query->id) . "' class='btn btn-danger delete-item'>
+                <i class='bi bi-archive'></i>
+                </a>";
+                return $deleteBtn;
+            })
+            ->rawColumns(['image', 'action', 'status'])
             ->setRowId('id');
     }
 
     /**
      * Get the query source of dataTable.
      */
-    public function query(Category $model): QueryBuilder
+    public function query(Banner $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -68,7 +61,7 @@ class CategoriesDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-            ->setTableId('categories-table')
+            ->setTableId('banner-table')
             ->columns($this->getColumns())
             ->minifiedAjax()
             //->dom('Bfrtip')
@@ -91,7 +84,7 @@ class CategoriesDataTable extends DataTable
     {
         return [
             Column::make('id'),
-            Column::make('name'),
+            Column::make('image'),
             Column::make('status'),
             // Column::make('created_at'),
             // Column::make('updated_at'),
@@ -108,6 +101,6 @@ class CategoriesDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'Categories_' . date('YmdHis');
+        return 'Banner_' . date('YmdHis');
     }
 }

@@ -14,11 +14,37 @@
                                 <li class="list-group-item">{{ $brand->name }}</li>
                             @endforeach
                         </ul>
-
                     </div>
                 </div>
             </div>
             <div class="col-10 mx-auto">
+                <div id="carouselExampleIndicators" class="carousel slide mb-3">
+                    <div class="carousel-indicators">
+                        @foreach ($banners as $key => $banner)
+                            <button type="button" class="{{ $key == 0 ? 'active' : '' }}"
+                                aria-current="{{ $key == 0 ? 'true' : '' }}" data-bs-target="#carouselExampleIndicators"
+                                data-bs-slide-to="{{ $key++ }}" aria-label="Slide {{ $key }}"></button>
+                        @endforeach
+                    </div>
+                    <div class="carousel-inner">
+                        @foreach ($banners as $key => $banner)
+                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                <img src="{{ asset($banner->image) }}" class="d-block w-100" alt="..."
+                                    style="height: 400px;">
+                            </div>
+                        @endforeach
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+                        data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+                        data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
                 <div class="row">
                     @foreach ($products as $product)
                         <div class="card col-md-6 col-lg-4">

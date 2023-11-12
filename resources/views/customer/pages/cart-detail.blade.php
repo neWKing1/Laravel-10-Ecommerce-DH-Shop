@@ -79,24 +79,30 @@
                         <h5>Total card</h5>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('checkout') }}" method="POST">
+                        <form action="{{ route('checkout') }}" method="GET" class="mb-3">
                             @csrf
-                            {{-- <div class="d-flex align-items-center justify-content-between">
-                                <p>Subtotal:</p>
-                                <p>100đ</p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <p class="fw-bold">Subtotal:</p>
+                                <p id="total">{{ number_format($total, 0, '.', '.') }}$</p>
+                                <input type="hidden" value="{{ $total }}" name="total">
                             </div>
                             <div class="d-flex align-items-center justify-content-between">
-                                <p>Delivery:</p>
-                                <p>100đ</p>
-                            </div> --}}
+                                <p class="fw-bold">Discount:</p>
+                                <p id="discount">0$</p>
+                            </div>
                             <div class="d-flex align-items-center justify-content-between">
                                 <p class="fw-bold">Total:</p>
-                                <p id="total">{{ number_format($total, 0, '.', '.') }}$</p>
-                                <input type="hidden" value="{{$total}}" name="total">
+                                <p id="cart_total">{{ number_format($total, 0, '.', '.') }}$</p>
+                                <input type="hidden" value="{{ $total }}" name="cart_total" id="input_cart_total">
                             </div>
+
                             @if (count($cartItems) != 0)
-                                <button class="btn btn-secondary">Checkout</button>
+                                <button class="btn btn-secondary" type="submit">Checkout</button>
                             @endif
+                        </form>
+                        <form id="coupon_form" class="d-flex mb-3">
+                            <input class="form-control me-2" type="text" placeholder="Coupon code" name="coupon_code">
+                            <button class="btn btn-outline-success" type="submit">Apply</button>
                         </form>
                     </div>
                 </div>
@@ -127,6 +133,7 @@
                             toastr.success(data.message)
                             $(productId).text(data.product_total + "$")
                             $('#total').text(data.total + "$");
+                            calcCouponDiscount()
                         } else if (data.status === 'error') {
                             toastr.error(data.message)
                         }
@@ -156,6 +163,7 @@
                             toastr.success(data.message)
                             $(productId).text(data.product_total + "$")
                             $('#total').text(data.total + "$");
+                            calcCouponDiscount()
                         }
                     }
                 })
@@ -193,6 +201,44 @@
                     }
                 })
             })
+
+            // apply coupon
+            $('#coupon_form').on('submit', function(e) {
+                e.preventDefault();
+                let fromData = $(this).serialize();
+                console.log(fromData);
+                $.ajax({
+                    type: 'GET',
+                    url: "{{ route('apply-coupon') }}",
+                    data: fromData,
+                    success: function(data) {
+                        console.log(data);
+                        if (data.status == 'error') {
+                            toastr.error(data.message)
+                        } else if (data.status == 'success') {
+                            calcCouponDiscount()
+                            toastr.success(data.message)
+                        }
+                    }
+                })
+            })
+
+            function calcCouponDiscount() {
+                $.ajax({
+                    type: 'GET',
+                    url: "{{ route('coupon-calc') }}",
+                    success: function(data) {
+                        console.log(data);
+                        if (data.status == 'error') {
+                            toastr.error(data.message)
+                        } else if (data.status == 'success') {
+                            $('#discount').text(data.discount + '$');
+                            $('#cart_total').text(data.cart_total + '$');
+                            $('#input_cart_total').val(data.cart_total);
+                        }
+                    }
+                })
+            }
         })
     </script>
 @endpush

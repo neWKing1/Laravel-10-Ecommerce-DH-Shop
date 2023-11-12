@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\ProductVariantItem;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
@@ -101,5 +103,85 @@ class CartController extends Controller
             $total += $product->price * $product->qty;
         }
         return $total;
+    }
+    public function applyCoupon(Request $request)
+    {
+        // dd($request->all());
+        if ($request->coupon_code == null) {
+            return response([
+                'status' => 'error',
+                'message' => "Coupon filed is required"
+            ]);
+        }
+
+        $coupon = Coupon::where(['code' => $request->coupon_code, 'status' => 1])->first();
+
+        if ($coupon == null) {
+            return response([
+                'status' => 'error',
+                'message' => "Coupon not exist"
+            ]);
+        } else if ($coupon->start_date > Date('Y-m-d')) {
+            return response([
+                'status' => 'error',
+                'message' => "Coupon not exist"
+            ]);
+        } else if ($coupon->end_date < Date('Y-m-d')) {
+            return response([
+                'status' => 'error',
+                'message' => "Coupon is expired"
+            ]);
+        } else if ($coupon->total_used >= $coupon->quantity) {
+            return response([
+                'status' => 'error',
+                'message' => "You can not apply this coupon"
+            ]);
+        }
+
+        if ($coupon->discount_type == 'Amount') {
+            Session::put('coupon', [
+                'coupon_name' => $coupon->name,
+                'coupon_code' => $coupon->code,
+                'discount_type' => 'amount',
+                'discount' => $coupon->discount
+            ]);
+        } else if ($coupon->discount_type == 'Percent') {
+            Session::put('coupon', [
+                'coupon_name' => $coupon->name,
+                'coupon_code' => $coupon->code,
+                'discount_type' => 'percent',
+                'discount' => $coupon->discount
+            ]);
+        };
+
+        return response([
+            'status' => 'success',
+            'message' => "Coupon applied"
+        ]);
+    }
+    public function couponCalc()
+    {
+        if (Session::has('coupon')) {
+            $coupon = Session::get('coupon');
+
+            if ($coupon['discount_type'] == 'amount') {
+                $total = (double)$this->getCartTotal()  - (double)$coupon['discount'];
+                return response([
+                    'status' => 'success',
+                    'cart_total' => (double)$total,
+                    'discount' => $coupon['discount']
+                ]);
+            } else if ($coupon['discount_type'] == 'percent') {
+                $discount = (double)$this->getCartTotal() * (double)$coupon['discount'] / 100;
+                $total = (double)$this->getCartTotal() - (double)$discount;
+                return response([
+                    'status' => 'success',
+                    'cart_total' => (double)$total,
+                    'discount' => $discount
+                ]);
+            }
+        } else {
+            return 0;
+        }
     }
 }

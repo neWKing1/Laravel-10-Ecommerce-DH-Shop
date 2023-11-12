@@ -58,7 +58,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <p class="text-danger fw-bold">Total: {{ number_format($order->total, 0, '.', '.') }}$</p>
                             </div>
-                           
+
                         </div>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
            $('body').html(printBody);
 
            window.print();
-           
+
            $('body').html(originalContents);
         })
     })

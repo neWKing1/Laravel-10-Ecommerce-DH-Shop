@@ -36,16 +36,20 @@ Route::post('cart/update-quantiy', [CartController::class, 'updateProductQty'])-
 Route::get('clear-cart', [CartController::class, 'clearCart'])->name('clear-cart');
 Route::get('cart/remove-product/{rowId}', [CartController::class, 'removeProduct'])->name('cart.remove-product');
 Route::get('cart-count', [CartController::class, 'getCartCount'])->name('cart-count');
+Route::get('apply-coupon', [CartController::class, 'applyCoupon'])->name('apply-coupon');
+Route::get('coupon-calc', [CartController::class, 'couponCalc'])->name('coupon-calc');
 
 // Checkout routes
 Route::group(['middleware' => 'auth'], function () {
-    Route::post('checkout', [CheckoutController::class, 'index'])->name('checkout');
-    Route::post('pay', [CheckoutController::class, 'pay'])->name('pay');
+    Route::get('checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::get('pay', [CheckoutController::class, 'pay'])->name('pay');
     Route::get('vnpay', [CheckoutController::class, 'vnpayPayment'])->name('vnpay');
     Route::get('pay/success', [CheckoutController::class, 'checkoutSuccess'])->name('pay-success');
+    Route::get('pay/success1', [CheckoutController::class, 'checkoutSuccess1'])->name('pay-success1');
     /** Order routes */
     Route::get('orders', [UserOrderController::class, 'index'])->name('orders.index');
     Route::get('orders/show/{id}', [UserOrderController::class, 'show'])->name('orders.show');
+
 });
 
 

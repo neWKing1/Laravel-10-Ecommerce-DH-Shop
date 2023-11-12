@@ -9,6 +9,7 @@ use App\Models\Product;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use PhpParser\Node\Stmt\Return_;
 
 class CheckoutController extends Controller
@@ -16,12 +17,16 @@ class CheckoutController extends Controller
     //
     public function index(Request $request)
     {
-        $total = $request['total'];
-        return view('customer.pages.checkout', compact('total'));
+        // dd($request->all());
+        $cartTotal = $request['cart_total'];
+        return view('customer.pages.checkout', compact('cartTotal'));
     }
     public function pay(Request $request)
     {
         // dd(($request->all()));
+        $request['cart_total'] = (float)$request->cart_total;
+        // var_dump($request->cart_total);
+        // die();
         $request->validate([
             'telephone' => ['required', 'min:9'],
             'name' => ['required'],
@@ -29,24 +34,28 @@ class CheckoutController extends Controller
         ]);
         if ($request['payments'] == 2) {
             return redirect()->route('vnpay', [$request]);
+            // $this-
+            return $this->checkoutSuccess1($request);
         }
-        return redirect()->route('pay-success', $request);
+        return $this->checkoutSuccess($request);
     }
     public function vnpayPayment(Request $request)
     {
+        // var_dump($request->cart_total);
+        // die();
         // dd($request->all());
         error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
         date_default_timezone_set('Asia/Ho_Chi_Minh');
 
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        $vnp_Returnurl = route('pay-success');
-        $vnp_TmnCode = "CAL4BV81"; //Mã website tại VNPAY 
+        $vnp_Returnurl = route('pay-success1');
+        $vnp_TmnCode = "CAL4BV81"; //Mã website tại VNPAY
         $vnp_HashSecret = "VJMBKWWRRCWMVNQHRLSLPDSRQSSNTOAV"; //Chuỗi bí mật
 
         $vnp_TxnRef = uniqid(); //Mã đơn hàng. Trong thực tế Merchant cần insert đơn hàng vào DB và gửi mã này sang VNPAY
         $vnp_OrderInfo = $request->telephone . "~" . $request->address;
         $vnp_OrderType = $request->address;
-        $vnp_Amount = $request['total'] * 100 * 24000;
+        $vnp_Amount = (float)$request['cart_total'] * 100 * 24000;
         $vnp_Locale = "VN";
         $vnp_BankCode = $request['bank_code'];
         $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
@@ -90,7 +99,7 @@ class CheckoutController extends Controller
 
         $vnp_Url = $vnp_Url . "?" . $query;
         if (isset($vnp_HashSecret)) {
-            $vnpSecureHash =   hash_hmac('sha512', $hashdata, $vnp_HashSecret); //  
+            $vnpSecureHash =   hash_hmac('sha512', $hashdata, $vnp_HashSecret); //
             $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
         }
         $returnData = array(
@@ -104,12 +113,28 @@ class CheckoutController extends Controller
         }
         // vui lòng tham khảo thêm tại code demo
     }
-    public function checkoutSuccess(Request $request)
+    public function checkoutSuccess($request)
     {
         $this->storeOrder($request);
         $newOrder = Order::orderBy('created_at', 'desc')->first();
         // dd($newOrder);
         Cart::destroy();
+
+        Mail::raw('The order has been placed successfully', function ($message) {
+            $message->to(Auth::user()->email)->subject('noreplay');
+        });
+        return view('customer.pages.pay-success', compact('newOrder'));
+    }
+    public function checkoutSuccess1(Request $request)
+    {
+        $this->storeOrder($request);
+        $newOrder = Order::orderBy('created_at', 'desc')->first();
+        // dd($newOrder);
+        Cart::destroy();
+
+        Mail::raw('The order has been placed successfully', function ($message) {
+            $message->to(Auth::user()->email)->subject('noreplay');
+        });
         return view('customer.pages.pay-success', compact('newOrder'));
     }
     public function storeOrder(Request $request)
@@ -119,8 +144,7 @@ class CheckoutController extends Controller
         $order->invoice = $request['vnp_TxnRef'] ? $request['vnp_TxnRef'] :  uniqid();
         $order->user_id = Auth::user()->id;
         $order->order_status = 1;
-        $card = new CartController();
-        $order->total =  $card->getCartTotal();
+        $order->total = $request['vnp_Amount'] ? ($request['vnp_Amount'] / 24000 / 100) : $request->cart_total;
         $order->payment_method = $request['vnp_BankCode'] ? $request['vnp_BankCode'] : 'COD';
 
         if ($request['vnp_OrderInfo']) {
@@ -130,9 +154,9 @@ class CheckoutController extends Controller
         } else {
             $order->order_address = $request->address;
             $order->order_phone = $request->telephone;
-            // dd($order);
         }
         $order->save();
+        // dd($order);
 
         // // store Order Product
         foreach (Cart::content() as $product) {

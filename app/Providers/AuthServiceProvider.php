@@ -3,7 +3,12 @@
 namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
+
+use App\Models\Category;
+use App\Policies\CategoryPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -14,6 +19,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         //
+        Category::class => CategoryPolicy::class
     ];
 
     /**
@@ -22,5 +28,8 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        // Gate::define('owner.category.create', function () {
+        //     return Auth::user()->email == "owner@gmail.com";
+        // });
     }
 }
